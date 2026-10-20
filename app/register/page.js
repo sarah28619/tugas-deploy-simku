@@ -4,32 +4,46 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+// Pastikan ada kata 'export default' di depan nama fungsi komponenmu
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const router = useRouter();
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       alert('Konfirmasi password tidak cocok!');
       return;
     }
-    if (email && password) {
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Gagal mendaftarkan akun');
+      }
+
+      alert('Akun berhasil dibuat dan tersimpan di database!');
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userEmail', email);
-      alert('Akun berhasil dibuat!');
       router.push('/dashboard');
-    } else {
-      alert('Mohon isi semua data!');
+      
+    } catch (error) {
+      alert(error.message);
     }
   };
 
   return (
     <div className="auth-container">
       <div className="auth-card">
-        {/* Header Tanpa Ikon, di Tengah dengan Subteks */}
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>SIMKU</h1>
           <p style={{ fontSize: '13px', color: '#64748b', margin: 0, fontStyle: 'italic' }}>sistem manajement keuangan</p>

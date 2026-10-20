@@ -87,18 +87,24 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    const email = localStorage.getItem('userEmail');
-    if (!isLoggedIn || !email) {
-      router.push('/login');
-    } else {
-      setUserEmail(email);
-      const nameFromEmail = email.split('@')[0];
-      setUsername(nameFromEmail);
-      setProfileForm({ name: nameFromEmail, email: email, bio: bio });
-      loadTransactions(email);
-    }
-  }, [router]);
+    const fetchTransactions = async () => {
+      const userEmail = localStorage.getItem('userEmail');
+      if (!userEmail) return;
+
+      try {
+        const response = await fetch(`/api/transactions?user_email=${userEmail}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setTransactions(data);
+        }
+      } catch (error) {
+        console.error('Gagal memuat data transaksi:', error);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   const formatDateString = (dateVal) => {
     if (!dateVal) return getTodayString();
@@ -123,38 +129,50 @@ export default function DashboardPage() {
 
     return `${dayName}, ${dayNum}-${monthName}-${yearShort}`;
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Ambil email user yang sedang login dari localStorage
+    const userEmail = localStorage.getItem('userEmail');
+
+    if (!userEmail) {
+      alert('Sesi login tidak ditemukan, silakan login ulang.');
+      return;
+    }
+
     const newTransaction = {
-      id: editingId || Date.now(),
       title: form.title,
       amount: Number(form.amount),
       date: form.date || getTodayString(),
-      type: 'Pengeluaran',
+      type: form.type || 'Pengeluaran', // Pastikan form punya pilihan 'Pemasukan' atau 'Pengeluaran'
       user_email: userEmail
     };
 
-    if (editingId) {
-      setTransactions((prev) =>
-        prev.map((item) => (item.id === editingId ? { ...item, ...newTransaction } : item))
-      );
-      setEditingId(null);
-    } else {
-      setTransactions((prev) => [newTransaction, ...prev]);
-    }
-
-    setForm({ title: '', amount: '', date: getTodayString() });
-    setShowModal(false);
-
     try {
-      await fetch('/api/transactions', {
+      // Kirim data ke API backend untuk disimpan ke database Aiven
+      const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTransaction),
       });
-    } catch (err) {}
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal menyimpan transaksi');
+      }
+
+      // Jika sukses di database, perbarui tampilan/state lokal
+      setTransactions((prev) => [{ ...newTransaction, id: result.id }, ...prev]);
+
+      // Reset form dan tutup modal
+      setForm({ title: '', amount: '', date: getTodayString() });
+      setShowModal(false);
+      alert('Transaksi berhasil disimpan ke database!');
+
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   const handleEdit = (item) => {
