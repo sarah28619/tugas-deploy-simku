@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 
-// GET: Ambil semua transaksi berdasarkan user_email
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -24,7 +23,6 @@ export async function GET(request) {
   }
 }
 
-// POST: Tambah transaksi baru ke database Aiven
 export async function POST(request) {
   try {
     const { user_email, title, type, amount, date } = await request.json();

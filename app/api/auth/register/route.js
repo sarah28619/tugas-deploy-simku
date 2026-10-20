@@ -5,7 +5,6 @@ export async function POST(request) {
   try {
     const { email, password } = await request.json();
 
-    // Validasi input sederhana
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email dan password wajib diisi!' }, 
@@ -15,7 +14,6 @@ export async function POST(request) {
 
     const pool = getPool();
 
-    // Simpan data ke tabel users di database Aiven
     await pool.query(
       'INSERT INTO users (email, password) VALUES (?, ?)',
       [email, password]
@@ -28,7 +26,6 @@ export async function POST(request) {
   } catch (error) {
     console.error('ERROR REGISTER:', error);
 
-    // Menangani jika email sudah pernah terdaftar (Duplicate entry)
     if (error.code === 'ER_DUP_ENTRY') {
       return NextResponse.json(
         { error: 'Email sudah terdaftar!' }, 

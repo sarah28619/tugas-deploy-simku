@@ -132,7 +132,6 @@ export default function DashboardPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Ambil email user yang sedang login dari localStorage
     const userEmail = localStorage.getItem('userEmail');
 
     if (!userEmail) {
@@ -144,12 +143,12 @@ export default function DashboardPage() {
       title: form.title,
       amount: Number(form.amount),
       date: form.date || getTodayString(),
-      type: form.type || 'Pengeluaran', // Pastikan form punya pilihan 'Pemasukan' atau 'Pengeluaran'
+      type: form.type || 'Pengeluaran', 
       user_email: userEmail
     };
 
     try {
-      // Kirim data ke API backend untuk disimpan ke database Aiven
+      
       const response = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,10 +161,8 @@ export default function DashboardPage() {
         throw new Error(result.error || 'Gagal menyimpan transaksi');
       }
 
-      // Jika sukses di database, perbarui tampilan/state lokal
       setTransactions((prev) => [{ ...newTransaction, id: result.id }, ...prev]);
 
-      // Reset form dan tutup modal
       setForm({ title: '', amount: '', date: getTodayString() });
       setShowModal(false);
       alert('Transaksi berhasil disimpan ke database!');
@@ -357,7 +354,6 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="simku-main">
         {/* --- TAB 1: HOME --- */}
         {activeTab === 'home' && (
@@ -380,7 +376,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Banner Status */}
             <div className="status-banner" style={{ backgroundColor: isAman ? '#dc2626' : '#991b1b' }}>
               <div className="status-icon-circle">
                 <i className={`fa-solid ${isAman ? 'fa-check' : 'fa-xmark'}`}></i>
@@ -856,15 +851,15 @@ export default function DashboardPage() {
                   </label>
                   <label className="radio-option-item">
                     <input type="radio" name="lang" checked={selectedLanguage === 'minang'} onChange={() => setSelectedLanguage('minang')} />
-                    <span>bahasa minang</span>
+                    <span>bahasa inggris</span>
                   </label>
                   <label className="radio-option-item">
                     <input type="radio" name="lang" checked={selectedLanguage === 'sunda'} onChange={() => setSelectedLanguage('sunda')} />
-                    <span>bahasa sunda</span>
+                    <span>bahasa jepang</span>
                   </label>
                   <label className="radio-option-item">
                     <input type="radio" name="lang" checked={selectedLanguage === 'jawa'} onChange={() => setSelectedLanguage('jawa')} />
-                    <span>bahasa jawa</span>
+                    <span>bahasa china</span>
                   </label>
 
                   <button onClick={() => { alert('Bahasa berhasil diubah!'); setSettingsView('main'); }} className="btn-popup-red" style={{ marginTop: '12px', width: '120px' }}>
