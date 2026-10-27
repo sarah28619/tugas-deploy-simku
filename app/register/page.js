@@ -70,7 +70,7 @@ export default function RegisterPage() {
             <input 
               type="password" 
               className="auth-input" 
-              placeholder="********" 
+              placeholder="your password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required 
@@ -82,7 +82,7 @@ export default function RegisterPage() {
             <input 
               type="password" 
               className="auth-input" 
-              placeholder="********" 
+              placeholder="konfirmasi your password" 
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required 
