@@ -10,21 +10,7 @@ export default function DashboardPage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const [transactions, setTransactions] = useState([
-    { id: 1, title: 'bakso', amount: 20000, date: '2026-01-01', category: 'makanan' },
-    { id: 2, title: 'dimsum', amount: 45000, date: '2026-01-01', category: 'makanan' },
-    { id: 3, title: 'dalgona', amount: 10000, date: '2026-01-01', category: 'minuman' },
-    { id: 4, title: 'susu', amount: 10000, date: '2026-01-02', category: 'minuman' },
-    { id: 5, title: 'roti', amount: 20000, date: '2026-01-02', category: 'makanan' },
-    { id: 6, title: 'mie ayam', amount: 15000, date: '2026-01-03', category: 'makanan' },
-    { id: 7, title: 'es teh manis', amount: 5000, date: '2026-01-03', category: 'minuman' },
-    { id: 8, title: 'bensin motor', amount: 25000, date: '2026-01-04', category: 'transportasi' },
-    { id: 9, title: 'seblak pedas', amount: 18000, date: '2026-01-04', category: 'makanan' },
-    { id: 10, title: 'kopi susu', amount: 12000, date: '2026-01-05', category: 'minuman' },
-    { id: 11, title: 'siomay', amount: 10000, date: '2026-01-05', category: 'makanan' },
-    { id: 12, title: 'parkir', amount: 3000, date: '2026-01-06', category: 'transportasi' },
-    { id: 13, title: 'martabak manis', amount: 30000, date: '2026-01-06', category: 'makanan' },
-  ]);
+  const [transactions, setTransactions] = useState([]);
 
   const [showModal, setShowModal] = useState(false);
   const [settingsView, setSettingsView] = useState('main'); 
@@ -87,24 +73,18 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      const userEmail = localStorage.getItem('userEmail');
-      if (!userEmail) return;
-
-      try {
-        const response = await fetch(`/api/transactions?user_email=${userEmail}`);
-        const data = await response.json();
-
-        if (response.ok) {
-          setTransactions(data);
-        }
-      } catch (error) {
-        console.error('Gagal memuat data transaksi:', error);
-      }
-    };
-
-    fetchTransactions();
-  }, []);
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const email = localStorage.getItem('userEmail');
+    if (!isLoggedIn || !email) {
+      router.push('/login');
+    } else {
+      setUserEmail(email);
+      const nameFromEmail = email.split('@')[0];
+      setUsername(nameFromEmail);
+      setProfileForm({ name: nameFromEmail, email: email, bio: bio });
+      loadTransactions(email);
+    }
+  }, [router]);
 
   const formatDateString = (dateVal) => {
     if (!dateVal) return getTodayString();
@@ -129,47 +109,38 @@ export default function DashboardPage() {
 
     return `${dayName}, ${dayNum}-${monthName}-${yearShort}`;
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const userEmail = localStorage.getItem('userEmail');
-
-    if (!userEmail) {
-      alert('Sesi login tidak ditemukan, silakan login ulang.');
-      return;
-    }
-
     const newTransaction = {
+      id: editingId || Date.now(),
       title: form.title,
       amount: Number(form.amount),
       date: form.date || getTodayString(),
-      type: form.type || 'Pengeluaran', 
+      type: 'Pengeluaran',
       user_email: userEmail
     };
 
+    if (editingId) {
+      setTransactions((prev) =>
+        prev.map((item) => (item.id === editingId ? { ...item, ...newTransaction } : item))
+      );
+      setEditingId(null);
+    } else {
+      setTransactions((prev) => [newTransaction, ...prev]);
+    }
+
+    setForm({ title: '', amount: '', date: getTodayString() });
+    setShowModal(false);
+
     try {
-      
-      const response = await fetch('/api/transactions', {
+      await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTransaction),
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Gagal menyimpan transaksi');
-      }
-
-      setTransactions((prev) => [{ ...newTransaction, id: result.id }, ...prev]);
-
-      setForm({ title: '', amount: '', date: getTodayString() });
-      setShowModal(false);
-      alert('Transaksi berhasil disimpan ke database!');
-
-    } catch (err) {
-      alert(err.message);
-    }
+    } catch (err) {}
   };
 
   const handleEdit = (item) => {
@@ -354,6 +325,7 @@ export default function DashboardPage() {
         </div>
       </aside>
 
+      {/* Main Content Area */}
       <main className="simku-main">
         {/* --- TAB 1: HOME --- */}
         {activeTab === 'home' && (
@@ -376,6 +348,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Banner Status */}
             <div className="status-banner" style={{ backgroundColor: isAman ? '#dc2626' : '#991b1b' }}>
               <div className="status-icon-circle">
                 <i className={`fa-solid ${isAman ? 'fa-check' : 'fa-xmark'}`}></i>
@@ -851,15 +824,15 @@ export default function DashboardPage() {
                   </label>
                   <label className="radio-option-item">
                     <input type="radio" name="lang" checked={selectedLanguage === 'minang'} onChange={() => setSelectedLanguage('minang')} />
-                    <span>bahasa inggris</span>
+                    <span>bahasa minang</span>
                   </label>
                   <label className="radio-option-item">
                     <input type="radio" name="lang" checked={selectedLanguage === 'sunda'} onChange={() => setSelectedLanguage('sunda')} />
-                    <span>bahasa jepang</span>
+                    <span>bahasa sunda</span>
                   </label>
                   <label className="radio-option-item">
                     <input type="radio" name="lang" checked={selectedLanguage === 'jawa'} onChange={() => setSelectedLanguage('jawa')} />
-                    <span>bahasa china</span>
+                    <span>bahasa jawa</span>
                   </label>
 
                   <button onClick={() => { alert('Bahasa berhasil diubah!'); setSettingsView('main'); }} className="btn-popup-red" style={{ marginTop: '12px', width: '120px' }}>
